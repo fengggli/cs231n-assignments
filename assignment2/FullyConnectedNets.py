@@ -47,6 +47,7 @@
 
 # As usual, a bit of setup
 from __future__ import print_function
+from IPython import get_ipython
 import time
 import numpy as np
 import matplotlib.pyplot as plt
