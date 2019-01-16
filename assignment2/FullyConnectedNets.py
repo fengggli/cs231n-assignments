@@ -417,7 +417,7 @@ small_data = {
 }
 
 weight_scale = 1e-2
-learning_rate = 1e-4
+learning_rate = 1e-2 # training error changed from 1e-4
 model = FullyConnectedNet([100, 100],
               weight_scale=weight_scale, dtype=np.float64)
 solver = Solver(model, small_data,
@@ -452,8 +452,8 @@ small_data = {
   'y_val': data['y_val'],
 }
 
-learning_rate = 2e-3
-weight_scale = 1e-5
+learning_rate = 1e-5 ## i haven't tried the best param yet
+weight_scale = 1e-7
 model = FullyConnectedNet([100, 100, 100, 100],
                 weight_scale=weight_scale, dtype=np.float64)
 solver = Solver(model, small_data,
