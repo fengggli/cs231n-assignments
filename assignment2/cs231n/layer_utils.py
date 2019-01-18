@@ -74,6 +74,19 @@ def conv_bn_relu_backward(dout, cache):
     dx, dw, db = conv_backward_fast(da, conv_cache)
     return dx, dw, db, dgamma, dbeta
 
+# TODO: add batch norm
+def resnet_basic_no_bn_forward(x, W1, b1, W2, b2, conv_param):
+    out, cache1 = conv_relu_forward(x, W1, b1, conv_param)
+    out, cache2 = conv_relu_forward(out, W2, b2, conv_param)
+    cache = (cache1, cache2)
+    return out, cache
+
+def resnet_basic_no_bn_backward(dout, cache):
+    cache1, cache2 = cache
+    dout, dW2, db2 = conv_relu_backward(dout, cache2)
+    dx, dW1, db1 = conv_relu_forward(dout, cache1)
+    return dx, dW1, db1, dW2, db2
+
 
 def conv_relu_pool_forward(x, w, b, conv_param, pool_param):
     """
