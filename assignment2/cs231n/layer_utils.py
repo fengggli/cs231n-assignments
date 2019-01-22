@@ -74,17 +74,47 @@ def conv_bn_relu_backward(dout, cache):
     dx, dw, db = conv_backward_fast(da, conv_cache)
     return dx, dw, db, dgamma, dbeta
 
+def plus_forward(x1, x2):
+    out = x1+x2
+    cache = (x1, x2)
+    return out, cache
+
+def plus_backward(dout, cache):
+    x1, x2 = cache
+    dx1 = dout*x2
+    dx2 = dout*x1
+    return dx1, dx2
+
+
+# iden is the indentify from below layer
+def conv_iden_relu_forward(x, iden, w, b , conv_param):
+    out, conv_cache = conv_forward_fast(x, w, b, conv_param)
+    #  an, bn_cache = spatial_batchnorm_forward(a, gamma, beta, bn_param)
+    out, plus_cache = plus_forward(out, iden)
+    out, relu_cache = relu_forward(out)
+    cache = (conv_cache, plus_cache, relu_cache)
+    return out, cache
+
+def conv_iden_relu_backward(dout, cache):
+    conv_cache, plus_cache, relu_cache = cache
+    
+    dout = relu_backward(dout, relu_cache)
+    dout, diden = plus_backward(dout, plus_cache)
+    dx, dw, db = conv_backward_fast(dout, conv_cache)
+    return dx, diden, dw, db
+
 # TODO: add batch norm
 def resnet_basic_no_bn_forward(x, W1, b1, W2, b2, conv_param):
     out, cache1 = conv_relu_forward(x, W1, b1, conv_param)
-    out, cache2 = conv_relu_forward(out, W2, b2, conv_param)
+    out, cache2 = conv_iden_relu_forward(out, iden, W2, b2, conv_param)
     cache = (cache1, cache2)
     return out, cache
 
 def resnet_basic_no_bn_backward(dout, cache):
     cache1, cache2 = cache
-    dout, dW2, db2 = conv_relu_backward(dout, cache2)
-    dx, dW1, db1 = conv_relu_forward(dout, cache1)
+    dout1, dout2, diden, dW2, db2 = conv_iden_relu_backward(dout, cache2)
+    dout1, dW1, db1 = conv_relu_backward(dout1, cache1)
+    dx = dout2 + dout1
     return dx, dW1, db1, dW2, db2
 
 

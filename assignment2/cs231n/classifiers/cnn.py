@@ -35,17 +35,13 @@ class ResNet(object):
     channels.
     """
 
-    def __init__(self, input_dim=(3, 32, 32), num_filters=32, filter_size=7,
-                 hidden_dim=100, num_classes=10, weight_scale=1e-3, reg=0.0,
+    def __init__(self, layers, num_classes=10, weight_scale=1e-3, reg=0.0,
                  dtype=np.float32):
         """
         Initialize a new network.
 
         Inputs:
-        - input_dim: Tuple (C, H, W) giving size of input data
-        - num_filters: Number of filters to use in the convolutional layer
-        - filter_size: Width/height of filters to use in the convolutional layer
-        - hidden_dim: Number of units to use in the fully-connected hidden layer
+        - layers: how many resisual blocks in each stage
         - num_classes: Number of scores to produce from the final affine layer.
         - weight_scale: Scalar giving standard deviation for random initialization
           of weights.
