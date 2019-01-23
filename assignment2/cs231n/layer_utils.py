@@ -81,8 +81,8 @@ def plus_forward(x1, x2):
 
 def plus_backward(dout, cache):
     x1, x2 = cache
-    dx1 = dout*x2
-    dx2 = dout*x1
+    dx1 = dout
+    dx2 = dout
     return dx1, dx2
 
 
@@ -106,13 +106,13 @@ def conv_iden_relu_backward(dout, cache):
 # TODO: add batch norm
 def resnet_basic_no_bn_forward(x, W1, b1, W2, b2, conv_param):
     out, cache1 = conv_relu_forward(x, W1, b1, conv_param)
-    out, cache2 = conv_iden_relu_forward(out, iden, W2, b2, conv_param)
+    out, cache2 = conv_iden_relu_forward(out, x, W2, b2, conv_param)
     cache = (cache1, cache2)
     return out, cache
 
 def resnet_basic_no_bn_backward(dout, cache):
     cache1, cache2 = cache
-    dout1, dout2, diden, dW2, db2 = conv_iden_relu_backward(dout, cache2)
+    dout1, dout2, dW2, db2 = conv_iden_relu_backward(dout, cache2)
     dout1, dW1, db1 = conv_relu_backward(dout1, cache1)
     dx = dout2 + dout1
     return dx, dW1, db1, dW2, db2
