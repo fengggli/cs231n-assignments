@@ -164,6 +164,7 @@ print('dw1 error: ', rel_error(dw1_num, dw1))
 print('db1 error: ', rel_error(db1_num, db1))
 print('dw2 error: ', rel_error(dw2_num, dw2))
 print('db2 error: ', rel_error(db2_num, db2))
+
 # In[ ]:
 '''
 
