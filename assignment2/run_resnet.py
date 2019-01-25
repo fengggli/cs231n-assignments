@@ -166,7 +166,8 @@ print('dw2 error: ', rel_error(dw2_num, dw2))
 print('db2 error: ', rel_error(db2_num, db2))
 
 
-# %% sanity check
+# %% sanity check loss
+# After you build a new network, one of the first things you should do is sanity check the loss. When we use the softmax loss, we expect the loss for random weights (and no regularization) to be about `log(C)` for `C` classes. When we add regularization this should go up.
 
 
 model = ResNet()
@@ -181,6 +182,28 @@ print('Initial loss (no regularization): ', loss)
 model.reg = 0.5
 loss, grads = model.loss(X, y)
 print('Initial loss (with regularization): ', loss)
+
+# %% Gradient check
+# After the loss looks reasonable, use numeric gradient checking to make sure that your backward pass is correct. When you use numeric gradient checking you should use a small amount of artifical data and a small number of neurons at each layer. Note: correct implementations may still have relative errors up to the order of e-2.
+
+# relative errors I got: (W0: 8.36e-5), (W1_0_0_0, 4.08e-2), (W1_0_1: 3.56e-2),(W3: 1.2e-7) (b0:2.29e-6), (b1_0_0, 747e-1), (b1_0_1: 3.98 e-6), (b3: 1.23e-9)
+num_inputs = 2
+input_dim = (3, 32, 32)
+reg = 0.0
+num_classes = 10
+np.random.seed(231)
+X = np.random.randn(num_inputs, *input_dim)
+y = np.random.randint(num_classes, size=num_inputs)
+
+model = ResNet(input_dim = input_dim, dtype=np.float64)
+loss, grads = model.loss(X, y)
+# Errors should be small, but correct implementations may have
+# relative errors up to the order of e-2
+for param_name in sorted(grads):
+    f = lambda _: model.loss(X, y)[0]
+    param_grad_num = eval_numerical_gradient(f, model.params[param_name], verbose=False, h=1e-6)
+    e = rel_error(param_grad_num, grads[param_name])
+    print('%s max relative error: %e' % (param_name, rel_error(param_grad_num, grads[param_name])))
 
 # In[ ]:
 '''

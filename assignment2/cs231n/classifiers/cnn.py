@@ -173,7 +173,7 @@ class ResNet(object):
             # C. H, W = xxx
             
             for blk_id in np.arange(num_residual_blks):
-                print('----forwarding at stage %d blk %d' %( stage_id, blk_id))
+                # print('----forwarding at stage %d blk %d' %( stage_id, blk_id))
                 WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
                 bb1 = self.params['b' + str(stage_id) + '_' + str(blk_id) + '_0']
                 WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
@@ -240,7 +240,7 @@ class ResNet(object):
             num_residual_blks = layers[stage_id -1]
 
             for blk_id in np.arange(num_residual_blks-1, -1, -1):
-                print('---backprog at stage %d blk %d' %( stage_id, blk_id))
+                # print('---backprog at stage %d blk %d' %( stage_id, blk_id))
                 WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
                 WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
         
@@ -253,9 +253,9 @@ class ResNet(object):
                 dWW2 += self.reg*WW2
                 
                 grads['W' + str(stage_id) + '_' + str(blk_id) + '_0'] = dWW1
-                grads['W' + str(stage_id) + '_' + str(blk_id) + '_0'] = dbb1
+                grads['b' + str(stage_id) + '_' + str(blk_id) + '_0'] = dbb1
                 grads['W' + str(stage_id) + '_' + str(blk_id) + '_1'] = dWW2
-                grads['W' + str(stage_id) + '_' + str(blk_id) + '_1'] = dbb2
+                grads['b' + str(stage_id) + '_' + str(blk_id) + '_1'] = dbb2
                          
                 
         ###############
