@@ -105,7 +105,7 @@ class ResNet(object):
             # some operation
             # C. H, W = xxx
             
-            for blk_id in np.arrange(num_residual_blks):
+            for blk_id in np.arange(num_residual_blks):
                 WW1 = np.random.normal(loc=0.0, scale = weight_scale, size = (16, C,3,3))
                 bb1 = np.zeros(16)
                 WW2 = np.random.normal(loc=0.0, scale = weight_scale, size = (16, C,3,3))
@@ -157,8 +157,8 @@ class ResNet(object):
         ##########################
         #   preparation stage    #
         ##########################
-        W1, b1 = self.params['W1'], self.params['b1']
-        out, cache = conv_relu_forward(X, W1, b1, conv_param)
+        W0, b0 = self.params['W0'], self.params['b0']
+        out, cache = conv_relu_forward(X, W0, b0, conv_param)
         all_caches.append(cache)
         
         
@@ -172,7 +172,8 @@ class ResNet(object):
             # some operation
             # C. H, W = xxx
             
-            for blk_id in np.arrange(num_residual_blks):
+            for blk_id in np.arange(num_residual_blks):
+                print('----forwarding at stage %d blk %d' %( stage_id, blk_id))
                 WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
                 bb1 = self.params['b' + str(stage_id) + '_' + str(blk_id) + '_0']
                 WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
@@ -235,10 +236,11 @@ class ResNet(object):
         ###############
         # Main Stage  #
         ###############
-        for stage_id in np.arange(len(layers), 1, -1):
+        for stage_id in np.arange(len(layers), 0, -1):
             num_residual_blks = layers[stage_id -1]
 
-            for blk_id in np.arrange(num_residual_blks):
+            for blk_id in np.arange(num_residual_blks-1, -1, -1):
+                print('---backprog at stage %d blk %d' %( stage_id, blk_id))
                 WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
                 WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
         
@@ -259,14 +261,14 @@ class ResNet(object):
         ###############
         # Prepare Stage #
         ###############
-        loss += 0.5*reg*np.sum(np.square(W1))
+        loss += 0.5*reg*np.sum(np.square(W0))
         
-        dx, dW1, db1 = conv_relu_backward(dout, cache)
+        dx, dW0, db0 = conv_relu_backward(dout, all_caches.pop())
         
-        dW1 += self.reg*W1
+        dW0 += self.reg*W0
            
-        grads['W1'] = dW1
-        grads['b1'] = db1
+        grads['W0'] = dW0
+        grads['b0'] = db0
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

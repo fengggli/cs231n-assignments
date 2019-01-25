@@ -165,6 +165,23 @@ print('db1 error: ', rel_error(db1_num, db1))
 print('dw2 error: ', rel_error(dw2_num, dw2))
 print('db2 error: ', rel_error(db2_num, db2))
 
+
+# %% sanity check
+
+
+model = ResNet()
+
+N = 50
+X = np.random.randn(N, 3, 32, 32)
+y = np.random.randint(10, size=N)
+
+loss, grads = model.loss(X, y)
+print('Initial loss (no regularization): ', loss)
+
+model.reg = 0.5
+loss, grads = model.loss(X, y)
+print('Initial loss (with regularization): ', loss)
+
 # In[ ]:
 '''
 
