@@ -239,7 +239,7 @@ class ResNet(object):
         for stage_id in np.arange(len(layers), 0, -1):
             num_residual_blks = layers[stage_id -1]
 
-            for blk_id in np.arange(num_residual_blks-1, -1, -1):
+            for blk_id in np.arange(num_residual_blks-1, -1, -1): # blk n-1... blk 0
                 # print('---backprog at stage %d blk %d' %( stage_id, blk_id))
                 WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
                 WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
