@@ -220,12 +220,12 @@ for k, v in data.items():
 np.random.seed(231)
 
 
-num_train = 100
-num_epoch =30
+num_train = 500
+num_epoch =100
 
 weight_scale=1e-2
 lr = 1e-3
-batch_size=20
+batch_size=100
 
 small_data = {
   'X_train': data['X_train'][:num_train],
