@@ -100,7 +100,7 @@ class ResNet(object):
         # the Weights are names as W%(stage_name)_%(residual_block_index)_%(convolution_layer)
         for stage_id in np.arange(1, len(layers) + 1):
             num_residual_blks = layers[stage_id -1]
-            
+
             # might need downsampling
             # some operation
             # C. H, W = xxx
@@ -165,15 +165,15 @@ class ResNet(object):
         ##########################
         #   main stages          #
         ##########################
-        for stage_id in np.arange(1, len(layers) + 1):
+        for stage_id in np.arange(1, len(layers) + 1): # 1,...n-1, n
             num_residual_blks = layers[stage_id -1]
-            
             # might need downsampling
             # some operation
             # C. H, W = xxx
             
             for blk_id in np.arange(num_residual_blks):
                 # print('----forwarding at stage %d blk %d' %( stage_id, blk_id))
+                # TODO: change to ref2W
                 WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
                 bb1 = self.params['b' + str(stage_id) + '_' + str(blk_id) + '_0']
                 WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
@@ -207,7 +207,7 @@ class ResNet(object):
 
         loss, grads = 0, {}
         ############################################################################
-        # TODO: Implement the backward pass for the three-layer convolutional net, #
+        # TODO: Implement the backward pass for the residual  net,                 #
         # storing the loss and gradients in the loss and grads variables. Compute  #
         # data loss using softmax, and make sure that grads[k] holds the gradients #
         # for self.params[k]. Don't forget to add L2 regularization!               #
@@ -236,7 +236,7 @@ class ResNet(object):
         ###############
         # Main Stage  #
         ###############
-        for stage_id in np.arange(len(layers), 0, -1):
+        for stage_id in np.arange(len(layers), 0, -1): # n, n-1, 1
             num_residual_blks = layers[stage_id -1]
 
             for blk_id in np.arange(num_residual_blks-1, -1, -1): # blk n-1... blk 0
@@ -244,6 +244,7 @@ class ResNet(object):
                 WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
                 WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
         
+                # this should be in the forward pass
                 loss += 0.5*reg*(np.sum(np.square(WW1)) + np.sum(np.square(WW2)))
                 
                 dout, dWW1, dbb1, dWW2, dbb2 = resnet_basic_no_bn_backward(dout, all_caches.pop())
@@ -259,7 +260,7 @@ class ResNet(object):
                          
                 
         ###############
-        # Prepare Stage #
+        # Prepare Stage#
         ###############
         loss += 0.5*reg*np.sum(np.square(W0))
         
@@ -404,7 +405,7 @@ class ThreeLayerConvNet(object):
         out, cache1 = conv_relu_pool_forward(X, W1, b1, conv_param, pool_param)
         out, cache2 = affine_relu_forward(out, W2, b2)
         scores, cache3 = affine_forward(out, W3, b3)
-       
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -426,7 +427,7 @@ class ThreeLayerConvNet(object):
         reg = self.reg
         loss, dout = softmax_loss(scores, y) 
         loss += 0.5*reg*(np.sum(np.square(W1)) + np.sum(np.square(W2)) + np.sum(np.square(W3)))
-        
+
         dout, dW3, db3 = affine_backward(dout, cache3)
         dout, dW2, db2 =affine_relu_backward(dout, cache2)
         dx, dW1, db1 = conv_relu_pool_backward(dout, cache1)
