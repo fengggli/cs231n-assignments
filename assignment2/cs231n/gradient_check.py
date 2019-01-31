@@ -30,7 +30,7 @@ def eval_numerical_gradient(f, x, verbose=True, h=0.00001):
         # compute the partial derivative with centered formula
         grad[ix] = (fxph - fxmh) / (2 * h) # the slope
         if verbose:
-            print(ix, grad[ix])
+            print(ix, fx, fxph, fxmh, grad[ix])
         it.iternext() # step to next dimension
 
     return grad

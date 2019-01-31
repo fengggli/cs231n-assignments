@@ -190,13 +190,13 @@ print('Initial loss (with regularization): ', loss)
 # relative errors I got: (W0: 8.36e-5), (W1_0_0_0, 4.08e-2), (W1_0_1: 3.56e-2),(W3: 1.2e-7) (b0:2.29e-6), (b1_0_0, 747e-1), (b1_0_1: 3.98 e-6), (b3: 1.23e-9)
 num_inputs = 2
 input_dim = (3, 32, 32)
-reg = 0.0
+reg = 0.5
 num_classes = 10
 np.random.seed(231)
 X = np.random.randn(num_inputs, *input_dim)
 y = np.random.randint(num_classes, size=num_inputs)
 
-model = ResNet(input_dim = input_dim, weight_scale=1e-2,  dtype=np.float64)
+model = ResNet(input_dim = input_dim, weight_scale=1e-2, reg=reg, dtype=np.float64)
 loss, grads = model.loss(X, y)
 # Errors should be small, but correct implementations may have
 # relative errors up to the order of e-2
