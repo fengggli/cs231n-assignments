@@ -275,16 +275,42 @@ plt.savefig(figure_name)
 # By training the three-layer convolutional network for one epoch, you should achieve greater than 40% accuracy on the training set:
 
 # In[ ]:
+num_train = data['X_train'].shape[0]
+num_epoch = 3
+lr = 1e-3
+batch_size=100
 
+# default weight scale= reg=0.001
+for weight_scale in [1e-4, 1e-2, 1e-3]:
+    for reg in [1e-4, 1e-2, 1e-3]:
+        model = ResNet(weight_scale=weight_scale, reg=reg)
 
-model = ResNet(weight_scale=1e-3)
+        solver = Solver(model, data,
+                        num_epochs=num_epoch, batch_size=batch_size,
+                        update_rule='sgd', #adam
+                        optim_config={
+                          'learning_rate': lr,
+                        },
+                        verbose=True, print_every=20)
+        solver.train()
 
-solver = Solver(model, data,
-                num_epochs=1, batch_size=50,
-                update_rule='sgd',
-                optim_config={
-                  'learning_rate': 1e-3,
-                },
-                verbose=True, print_every=20)
-solver.train()
+        # %% save full cifar10 result
+        plt.subplot(2, 1, 1)
+        plt.plot(solver.loss_history, 'o')
+        plt.xlabel('iteration')
+        plt.ylabel('loss')
 
+        plt.subplot(2, 1, 2)
+        plt.plot(solver.train_acc_history, '-o')
+        plt.plot(solver.val_acc_history, '-o')
+        plt.legend(['train', 'val'], loc='upper left')
+        plt.xlabel('epoch')
+        plt.ylabel('accuracy')
+
+        # save the img
+        date_today = datetime.datetime.now().strftime("%Y-%m-%d")
+        figure_name = 'results/'+ date_today + '-' + 'cifar10'+ '-ntr' + str(num_train)+ \
+            '-e'+ str(num_epoch) + '-ws'+ str(weight_scale) + '-reg' + str(reg)+ \
+            '-lr'+ str(lr) + '-bs' + str(batch_size) + '.png'
+        print('Result figure of accuracies and error is saved in: ', figure_name)
+        plt.savefig(figure_name)
