@@ -40,7 +40,7 @@ class ResNet(object):
     """
 
     def __init__(self, input_dim=[3, 32, 32], layers = [1], num_classes=10, weight_scale=1e-3, reg=0.0,
-                 dtype=np.float32):
+                 dtype=np.float32, skip_residual = bool):
         """
         Initialize a new network.
 
@@ -51,12 +51,14 @@ class ResNet(object):
           of weights.
         - reg: Scalar giving L2 regularization strength
         - dtype: numpy datatype to use for computation.
+        - skip_residual: bypass the residual stages, for debugging use
         """
         self.params = {}
         self.conf = {}
         self.reg = reg
         self.dtype = dtype
         self.layers = layers
+        self.skip_residual = skip_residual
 
         ############################################################################
         # TODO: Initialize weights and biases for the three-layer convolutional    #
@@ -92,31 +94,31 @@ class ResNet(object):
         ##########################
         #   main stages          #
         ##########################
-        
 
-        
-        assert len(layers) ==1, 'more than 1 stage is now supported'
-        
-        # the Weights are names as W%(stage_name)_%(residual_block_index)_%(convolution_layer)
-        for stage_id in np.arange(1, len(layers) + 1):
-            num_residual_blks = layers[stage_id -1]
+        if(self.skip_residual == False):
+            
+            assert len(layers) ==1, 'more than 1 stage is now supported'
+            
+            # the Weights are names as W%(stage_name)_%(residual_block_index)_%(convolution_layer)
+            for stage_id in np.arange(1, len(layers) + 1):
+                num_residual_blks = layers[stage_id -1]
 
-            # might need downsampling
-            # some operation
-            # C. H, W = xxx
-            
-            for blk_id in np.arange(num_residual_blks):
-                WW1 = np.random.normal(loc=0.0, scale = weight_scale, size = (16, C,3,3))
-                bb1 = np.zeros(16)
-                WW2 = np.random.normal(loc=0.0, scale = weight_scale, size = (16, C,3,3))
-                bb2 = np.zeros(16)
-            
-                self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ] = WW1
-                self.params['b' + str(stage_id) + '_' + str(blk_id) + '_0'] = bb1
-                self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ] = WW2
-                self.params['b' + str(stage_id) + '_' + str(blk_id) + '_1'] = bb2
+                # might need downsampling
+                # some operation
+                # C. H, W = xxx
                 
-        
+                for blk_id in np.arange(num_residual_blks):
+                    WW1 = np.random.normal(loc=0.0, scale = weight_scale, size = (16, C,3,3))
+                    bb1 = np.zeros(16)
+                    WW2 = np.random.normal(loc=0.0, scale = weight_scale, size = (16, C,3,3))
+                    bb2 = np.zeros(16)
+                
+                    self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ] = WW1
+                    self.params['b' + str(stage_id) + '_' + str(blk_id) + '_0'] = bb1
+                    self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ] = WW2
+                    self.params['b' + str(stage_id) + '_' + str(blk_id) + '_1'] = bb2
+                    
+            
 
         ##########################
         #   final stages         #
@@ -165,23 +167,25 @@ class ResNet(object):
         ##########################
         #   main stages          #
         ##########################
-        for stage_id in np.arange(1, len(layers) + 1): # 1,...n-1, n
-            num_residual_blks = layers[stage_id -1]
-            # might need downsampling
-            # some operation
-            # C. H, W = xxx
-            
-            for blk_id in np.arange(num_residual_blks):
-                # print('----forwarding at stage %d blk %d' %( stage_id, blk_id))
-                # TODO: change to ref2W
-                WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
-                bb1 = self.params['b' + str(stage_id) + '_' + str(blk_id) + '_0']
-                WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
-                bb2 = self.params['b' + str(stage_id) + '_' + str(blk_id) + '_1']
+
+        if(self.skip_residual == False):
+            for stage_id in np.arange(1, len(layers) + 1): # 1,...n-1, n
+                num_residual_blks = layers[stage_id -1]
+                # might need downsampling
+                # some operation
+                # C. H, W = xxx
                 
-                out, cache = resnet_basic_no_bn_forward(out, WW1, bb1, WW2, bb2, conv_param)
-                all_caches.append(cache)
-        
+                for blk_id in np.arange(num_residual_blks):
+                    # print('----forwarding at stage %d blk %d' %( stage_id, blk_id))
+                    # TODO: change to ref2W
+                    WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
+                    bb1 = self.params['b' + str(stage_id) + '_' + str(blk_id) + '_0']
+                    WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
+                    bb2 = self.params['b' + str(stage_id) + '_' + str(blk_id) + '_1']
+                    
+                    out, cache = resnet_basic_no_bn_forward(out, WW1, bb1, WW2, bb2, conv_param)
+                    all_caches.append(cache)
+            
         ##########################
         #   final stages         #
         ##########################
@@ -236,28 +240,30 @@ class ResNet(object):
         ###############
         # Main Stage  #
         ###############
-        for stage_id in np.arange(len(layers), 0, -1): # n, n-1, 1
-            num_residual_blks = layers[stage_id -1]
 
-            for blk_id in np.arange(num_residual_blks-1, -1, -1): # blk n-1... blk 0
-                # print('---backprog at stage %d blk %d' %( stage_id, blk_id))
-                WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
-                WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
-        
-                # this should be in the forward pass
-                loss += 0.5*reg*(np.sum(np.square(WW1)) + np.sum(np.square(WW2)))
-                
-                dout, dWW1, dbb1, dWW2, dbb2 = resnet_basic_no_bn_backward(dout, all_caches.pop())
-                
-                
-                dWW1 += self.reg*WW1 # derivative of regulaizer
-                dWW2 += self.reg*WW2
-                
-                grads['W' + str(stage_id) + '_' + str(blk_id) + '_0'] = dWW1
-                grads['b' + str(stage_id) + '_' + str(blk_id) + '_0'] = dbb1
-                grads['W' + str(stage_id) + '_' + str(blk_id) + '_1'] = dWW2
-                grads['b' + str(stage_id) + '_' + str(blk_id) + '_1'] = dbb2
-                         
+        if(self.skip_residual == False):
+            for stage_id in np.arange(len(layers), 0, -1): # n, n-1, 1
+                num_residual_blks = layers[stage_id -1]
+
+                for blk_id in np.arange(num_residual_blks-1, -1, -1): # blk n-1... blk 0
+                    # print('---backprog at stage %d blk %d' %( stage_id, blk_id))
+                    WW1 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_0' ]
+                    WW2 = self.params['W' + str(stage_id) + '_' + str(blk_id) + '_1' ]
+            
+                    # this should be in the forward pass
+                    loss += 0.5*reg*(np.sum(np.square(WW1)) + np.sum(np.square(WW2)))
+                    
+                    dout, dWW1, dbb1, dWW2, dbb2 = resnet_basic_no_bn_backward(dout, all_caches.pop())
+                    
+                    
+                    dWW1 += self.reg*WW1 # derivative of regulaizer
+                    dWW2 += self.reg*WW2
+                    
+                    grads['W' + str(stage_id) + '_' + str(blk_id) + '_0'] = dWW1
+                    grads['b' + str(stage_id) + '_' + str(blk_id) + '_0'] = dbb1
+                    grads['W' + str(stage_id) + '_' + str(blk_id) + '_1'] = dWW2
+                    grads['b' + str(stage_id) + '_' + str(blk_id) + '_1'] = dbb2
+                             
                 
         ###############
         # Prepare Stage#
