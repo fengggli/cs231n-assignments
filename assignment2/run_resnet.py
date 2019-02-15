@@ -19,6 +19,7 @@ from cs231n.layers import *
 from cs231n.fast_layers import *
 from cs231n.solver import Solver
 import datetime
+import pickle
 
 # get_ipython().run_line_magic('matplotlib', 'inline')
 plt.rcParams['figure.figsize'] = (10.0, 8.0) # set default size of plots
@@ -212,7 +213,7 @@ for param_name in sorted(grads):
 # %% cifar10
 # Load the (preprocessed) CIFAR10 data.
 
-data = get_CIFAR10_data()
+data = get_CIFAR10_data(num_training=45000, num_validation=5000)
 for k, v in data.items():
   print('%s: ' % k, v.shape)
 
@@ -277,24 +278,30 @@ plt.savefig(figure_name)
 # In[ ]:
 num_train = data['X_train'].shape[0]
 num_epoch = 3
-lr = 1e-3
-batch_size=100
+lr = 0.01
+momentum = 0
+batch_size=128
+skip_residual = False
+
 
 # default weight scale= reg=0.001
-for weight_scale in [1e-4, 1e-2, 1e-3]:
-    for reg in [1e-4, 1e-2, 1e-3]:
-        model = ResNet(weight_scale=weight_scale, reg=reg)
+for weight_scale in [1e-3]:
+    for reg in [1e-3]:
+        model = ResNet(weight_scale=weight_scale, reg=reg, skip_residual=skip_residual)
 
         solver = Solver(model, data,
                         num_epochs=num_epoch, batch_size=batch_size,
-                        update_rule='sgd', #adam
+                        update_rule='sgd', # sgd
+                        #update_rule='sgd_momentum', # sgd with momentum
                         optim_config={
                           'learning_rate': lr,
+                          # 'momentum': momentum
                         },
                         verbose=True, print_every=20)
         solver.train()
 
         # %% save full cifar10 result
+        plt.figure()
         plt.subplot(2, 1, 1)
         plt.plot(solver.loss_history, 'o')
         plt.xlabel('iteration')
@@ -309,8 +316,15 @@ for weight_scale in [1e-4, 1e-2, 1e-3]:
 
         # save the img
         date_today = datetime.datetime.now().strftime("%Y-%m-%d")
-        figure_name = 'results/'+ date_today + '-' + 'cifar10'+ '-ntr' + str(num_train)+ \
+        prefix = 'results/'+ date_today + '-skipres' + str(skip_residual) + \
+                '-cifar10'+ '-ntr' + str(num_train)+ \
             '-e'+ str(num_epoch) + '-ws'+ str(weight_scale) + '-reg' + str(reg)+ \
-            '-lr'+ str(lr) + '-bs' + str(batch_size) + '.png'
+            '-lr'+ str(lr) + '-bs' + str(batch_size)
+
+        figure_name = prefix + '.png'
         print('Result figure of accuracies and error is saved in: ', figure_name)
         plt.savefig(figure_name)
+
+        stat_name =  prefix + '.stat'
+        pickle.dump((solver.train_acc_history,solver.val_acc_history), open(stat_name, 'wb'))
+        print('stat saved in: ', stat_name)
