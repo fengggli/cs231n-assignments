@@ -197,16 +197,22 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to ones and shift     #
         # parameters should be initialized to zeros.                               #
         ############################################################################
-        print(input_dim)
-        print([input_dim])
         all_dims = [input_dim] + hidden_dims + [num_classes]
         # input layer layer0, other layers  1,2,3...
         for layer_id in np.arange(1, self.num_layers + 1):
-            W =  np.random.normal(loc=0.0, scale = weight_scale, size = (all_dims[layer_id-1], all_dims[layer_id]))
-            b = np.zeros(all_dims[layer_id])
+            fan_in = all_dims[layer_id-1]
+            fan_out = all_dims[layer_id]
+
+            W =  np.random.normal(loc=0.0, scale = weight_scale, size = ( fan_in, fan_out))
+            b = np.zeros(fan_out)
             
             self.params['W' +str(layer_id)] = W
             self.params['b' + str(layer_id)] = b
+
+            if (layer_id != self.num_layers and self.normalization == 'batchnorm'):
+                # batchnorm not for the last layer
+                self.params['gamma' + str(layer_id)] = np.ones(fan_out)
+                self.params['beta' + str(layer_id)] = np.zeros(fan_out)
             
         ############################################################################
         #                             END OF YOUR CODE                             #
@@ -276,6 +282,11 @@ class FullyConnectedNet(object):
             all_caches.append(cache)
              #fc#(i+1)
             if (layer_id != self.num_layers):
+
+                if(self.normalization == 'batchnorm'):
+                    gamma ,beta = self.params['gamma' + str(layer_id)], self.params['beta' + str(layer_id)]
+                    out, cache = batchnorm_forward(out, gamma, beta, self.bn_params[layer_id-1])
+                    all_caches.append(cache)
                 out, cache = relu_forward(out) # relu
                 all_caches.append(cache)
         
@@ -305,20 +316,27 @@ class FullyConnectedNet(object):
         reg = self.reg
         # {affine - [batch/layer norm] - relu - [dropout]} x (L - 1) - affine - softmax
         loss, dout = softmax_loss(scores, y)
+
         for layer_id in np.arange(self.num_layers, 0, -1):
             W ,b = self.params['W' + str(layer_id)], self.params['b' + str(layer_id)]
         
-             
             loss += 0.5*reg*(np.sum(np.square(W)))#softmax
             
             if(layer_id != self.num_layers):
                 dout = relu_backward(dout, all_caches.pop())  # relu
+                if(self.normalization == 'batchnorm'):
+                    dout, dgamma, dbeta = batchnorm_backward(dout, all_caches.pop())
+
+                    grads['gamma'+ str(layer_id)] = dgamma
+                    grads['beta'+ str(layer_id)] = dbeta
+
             dout, dW, db = affine_backward(dout, all_caches.pop()) # fc1
             
             dW += self.reg*W
             
             grads['W'+ str(layer_id)] = dW
             grads['b'+ str(layer_id)] = db
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
